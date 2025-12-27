@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/spf13/viper"
 )
@@ -34,6 +35,8 @@ func Load(env string) (*Config, error) {
 	if len(config.Telegram.ChatIDs) == 0 {
 		return nil, fmt.Errorf("Chat ids is empty")
 	}
+
+	log.Printf("Loaded configuration from: %s", viper.ConfigFileUsed())
 
 	return &config, nil
 }
