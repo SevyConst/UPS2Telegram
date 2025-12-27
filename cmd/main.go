@@ -19,7 +19,7 @@ func main() {
 
 	flag.Parse()
 	if *env == "" {
-		log.Fatalf("Input parameter -env is nessesary")
+		log.Fatalf("Input parameter -env is neсessary")
 	}
 	if *env != "local" && *env != "prod" {
 		log.Fatalf("invalid env: '%s'", *env)
@@ -44,6 +44,8 @@ func main() {
 		)
 	case "online":
 		msg = fmt.Sprintf("✅ ПИТАНИЕ ОТ СЕТИ ВОССТАНОВЛЕНО. Таймер отменен. %s", timestamp)
+	default:
+		log.Fatalf("Unknown action: '%s'", *action)
 	}
 
 	if err := telegram.SendToMultipleChats(cfg.Telegram.Token, cfg.Telegram.ChatIDs, msg); err != nil {

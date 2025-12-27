@@ -33,7 +33,7 @@ func sendToChatID(token string, chatID int64, message string) error {
 
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
-		return fmt.Errorf("Can't marshall request body: %w", err)
+		return fmt.Errorf("Can't marshal request body: %w", err)
 	}
 
 	client := &http.Client{ 
@@ -52,6 +52,10 @@ func sendToChatID(token string, chatID int64, message string) error {
 		return fmt.Errorf("Can't send http-request: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP status %d", resp.StatusCode)
+	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
