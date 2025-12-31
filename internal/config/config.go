@@ -33,7 +33,7 @@ func Load(env string) (*Config, error) {
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
-		return nil, fmt.Errorf("Can't parse сonfig: %w", err)
+		return nil, fmt.Errorf("Can't parse config: %w", err)
 	}
 
 	if config.Telegram.Token == "" {

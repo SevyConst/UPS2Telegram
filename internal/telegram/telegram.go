@@ -20,10 +20,10 @@ type ResponseBody struct {
 	Error string `json:"description,omitempty"`
 	Result struct {
 		MessageID int `json:"message_id"`
-	} `json:"result,omitempty"`
+	} `json:"result"`
 }
 
-func sendToChatID(token string, chatID int64, message string) error {
+func sendToChatID(token string, chatID int64, message string) {
 	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
 
 	requestBody := RequestBody {
@@ -33,7 +33,8 @@ func sendToChatID(token string, chatID int64, message string) error {
 
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
-		return fmt.Errorf("Can't marshal request body: %w", err)
+		log.Printf("Chat id: %d - can't marshal request body: %v", chatID, err)
+		return
 	}
 
 	client := &http.Client{ 
@@ -42,46 +43,47 @@ func sendToChatID(token string, chatID int64, message string) error {
 
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Errorf("Can't create http-request: %w", err)
+		log.Printf("Chat id: %d - can't create http-request: %v", chatID, err)
+		return
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Can't send http-request: %w", err)
+		log.Printf("Chat id: %d - can't send http-request: %v", chatID, err)
+		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("HTTP status %d", resp.StatusCode)
+		log.Printf("Chat id: %d - HTTP status %d", chatID, resp.StatusCode)
+		return
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("Can't read answer: %w", err)
+		log.Printf("Chat id: %d - can't read answer: %v", chatID, err)
+		return
 	}
 
 	var responseBody ResponseBody 
 	if err := json.Unmarshal(body, &responseBody); err != nil {
-		return fmt.Errorf("Can't parse answer: %w", err)
+		log.Printf("Chat id: %d - can't parse answer: %v", chatID, err)
+		return
 	}
 
 	if !responseBody.OK {
-		return fmt.Errorf("Telegram API error: %s", responseBody.Error)
+		log.Printf("Chat id: %d - Telegram API error: %s", chatID, responseBody.Error)
+		return
 	}
 
-	log.Printf("Message '%s' has been sent to chat id %d", message, chatID)
-
-	return nil
+	log.Printf("Chat id: %d - message '%s' has been sent to chat id %d", chatID, message, chatID)
 }
 
 func SendToMultipleChats(token string, chatIDs []int64, message string) error {
 	for _, chatID := range chatIDs {
-		err := sendToChatID(token, chatID, message)
-		if err != nil {
-			return fmt.Errorf("Can't send to chat id %d: %w", chatID, err)
-		}
+		sendToChatID(token, chatID, message)
 
 		time.Sleep(100 * time.Millisecond)
 	}

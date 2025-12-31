@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"flag"
 	"fmt"
 	"log"
@@ -9,7 +10,12 @@ import (
 	"UPS2Telegram/internal/config"
 	"UPS2Telegram/internal/telegram"
 )
-const timerMinutes int8 = 15
+
+var validEnvs = map[string]struct{}{
+    "local": {},
+    "test":  {},
+    "prod":  {},
+}
 
 func main() {
 	timestamp := time.Now().Format("02.01.2006 15:04:05")
@@ -19,9 +25,9 @@ func main() {
 
 	flag.Parse()
 	if *env == "" {
-		log.Fatalf("Input parameter -env is neсessary")
+		log.Fatal("Input parameter -env is necessary")
 	}
-	if *env != "local" && *env != "prod" {
+	if _, exists := validEnvs[*env]; !exists {
 		log.Fatalf("invalid env: '%s'", *env)
 	}
 	
@@ -30,26 +36,27 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 
-	var msg string
 	switch *action {
 	case "earlyshutdown":
-		msg = fmt.Sprintf("⚠️ ВЫКЛЮЧЕНИЕ RASPBERRY PI. На питании от аккумулятора уже больше %d минут. %s",
-			timerMinutes,
-			timestamp,
-		)
+		cmd := exec.Command("sudo", "shutdown", "-h", "now")
+		if err := cmd.Run(); err != nil {
+        	log.Fatalf("Can't turn off raspberry pi: %v", err)
+    	}
+
 	case "onbatt":
-		msg = fmt.Sprintf("🔋 ПИТАНИЕ ОТ АККУМУЛЯТОРА ИБП. Таймер выключения запущен (%d мин). %s",
-			timerMinutes,
-			timestamp,
-		)
+		msg := fmt.Sprintf("⚠️ ЭЛЕКТРИЧЕСТВО ОТКЛЮЧИЛИ. %s", timestamp)
+		if err := telegram.SendToMultipleChats(cfg.Telegram.Token, cfg.Telegram.ChatIDs, msg); err != nil {
+			log.Fatalf("failed to send to Telegram: %v", err) 
+		}
+
 	case "online":
-		msg = fmt.Sprintf("✅ ПИТАНИЕ ОТ СЕТИ ВОССТАНОВЛЕНО. Таймер отменен. %s", timestamp)
+		msg := fmt.Sprintf("✅ ЭЛЕКТРИЧЕСТВО ВКЛЮЧИЛИ. %s", timestamp)
+		if err := telegram.SendToMultipleChats(cfg.Telegram.Token, cfg.Telegram.ChatIDs, msg); err != nil {
+			log.Fatalf("failed to send to Telegram: %v", err) 
+		}
+
 	default:
 		log.Fatalf("Unknown action: '%s'", *action)
-	}
-
-	if err := telegram.SendToMultipleChats(cfg.Telegram.Token, cfg.Telegram.ChatIDs, msg); err != nil {
-		log.Fatalf("failed to send to Telegram: %v", err) 
 	}
 	
 }
