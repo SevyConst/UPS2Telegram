@@ -3,8 +3,6 @@ package config
 import (
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/spf13/viper"
 )
@@ -16,16 +14,9 @@ type Config struct {
 	} `mapstructure:"telegram"`
 }
 
-func Load(env string) (*Config, error) {
-	viper.SetConfigName(fmt.Sprintf("config.%s", env))
-	viper.SetConfigType("yml")
-	
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("Can't get working directory: %w", err)
-	}
-	viper.AddConfigPath(filepath.Join(wd, "..", "config"))
+func Load(configFile string) (*Config, error) {
 
+	viper.SetConfigFile(configFile)
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("Can't read config: %w", err)

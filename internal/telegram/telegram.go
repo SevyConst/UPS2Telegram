@@ -23,6 +23,10 @@ type ResponseBody struct {
 	} `json:"result"`
 }
 
+var	httpClient = &http.Client{ 
+		Timeout: 30 * time.Second,
+	}
+
 func sendToChatID(token string, chatID int64, message string) {
 	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
 
@@ -37,10 +41,6 @@ func sendToChatID(token string, chatID int64, message string) {
 		return
 	}
 
-	client := &http.Client{ 
-		Timeout: 30 * time.Second,
-	}
-
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Printf("Chat id: %d - can't create http-request: %v", chatID, err)
@@ -49,7 +49,7 @@ func sendToChatID(token string, chatID int64, message string) {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("Chat id: %d - can't send http-request: %v", chatID, err)
 		return
@@ -81,11 +81,10 @@ func sendToChatID(token string, chatID int64, message string) {
 	log.Printf("Chat id: %d - message '%s' has been sent to chat id %d", chatID, message, chatID)
 }
 
-func SendToMultipleChats(token string, chatIDs []int64, message string) error {
+func SendToMultipleChats(token string, chatIDs []int64, message string) {
 	for _, chatID := range chatIDs {
 		sendToChatID(token, chatID, message)
 
 		time.Sleep(100 * time.Millisecond)
 	}
-	return nil
 }
