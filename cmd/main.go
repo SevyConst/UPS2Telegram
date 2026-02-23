@@ -16,7 +16,7 @@ func main() {
 	timestamp := time.Now().Format("02.01.2006 15:04:05")
 
 	action := flag.String("action", "", "From UPS")
-	configFile := flag.String("config", "", "Path to config directory")
+	configFile := flag.String("config", "", "config file")
 	flag.Parse()
 	
 	cfg, err := config.Load(*configFile)
@@ -26,6 +26,9 @@ func main() {
 
 	switch *action {
 	case "earlyshutdown":
+		log.Print("low battery - shutdown");
+		time.Sleep(5 * time.Millisecond)
+
 		cmd := exec.Command("sudo", "shutdown", "-h", "now")
 		if err := cmd.Run(); err != nil {
         	log.Fatalf("Can't turn off raspberry pi: %v", err)
